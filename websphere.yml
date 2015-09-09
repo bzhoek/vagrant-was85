@@ -1,0 +1,53 @@
+---
+- hosts: all
+  sudo: true
+  tasks:
+  - name: X server
+    yum: name={{item}} state=present
+    with_items:
+      - xauth
+      - xclock
+      - xhost
+      - libXtst
+      - dejavu-sans-fonts
+
+  - name: .Xauthority
+    lineinfile: dest=/root/.bashrc line="export XAUTHORITY=/home/vagrant/.Xauthority"
+
+  - name: WAS_ROOT
+    lineinfile: dest=/root/.bashrc line="export WAS_ROOT=/opt/IBM/WebSphere/AppServer"
+
+  - name: WebSphere PATH
+    lineinfile: dest=/root/.bashrc line="export PATH=/opt/IBM/WebSphere/AppServer/bin/:$PATH"
+
+  - shell: test -f /opt/IBM/InstallationManager/eclipse/tools/imcl
+    changed_when: False
+    ignore_errors: yes
+    register: imcl_installed
+
+  - name: extract installation manager
+    shell: unzip /vagrant/images/agent.installer.linux.gtk.x86_1.8.2001.20150409_1833.zip -d /tmp/ibmim
+    args:
+      creates: /tmp/ibmim
+    when: "not imcl_installed|success"
+
+#  - name: install installation manager
+#    shell: /tmp/ibmim/installc -acceptLicense input /vagrant/responses/installer_response.xml
+#    args:
+#      creates: /opt/IBM/InstallationManager
+#    when: "not imcl_installed|success"
+#
+#  - name: install websphere
+#    shell: /opt/IBM/InstallationManager/eclipse/tools/imcl -acceptLicense input /vagrant/responses/was-nd-8.0.0.4.xml
+#    args:
+#      creates: /opt/IBM/WebSphere/AppServer/bin
+#
+#  - name: cell deployment manager
+#    shell: /opt/IBM/WebSphere/AppServer/bin/manageprofiles.sh -create -profileName Dmgr01 -appServerNodeName d-was-01Node01 -enableService false -hostName d-was-01 -adminUserName wasadmin -adminPassword wasadmin -enableAdminSecurity true -nodeName d-was-01CellManager01 -cellName d-was-01Cell01 -profilePath /opt/IBM/WebSphere/AppServer/profiles/Dmgr01 -nodeProfilePath /opt/IBM/WebSphere/AppServer/profiles/AppSrv01 -templatePath /opt/IBM/WebSphere/AppServer/profileTemplates/cell/dmgr
+#    args:
+#      creates: /opt/IBM/WebSphere/AppServer/profiles/Dmgr01
+#
+#  - name: cell application server
+#    shell: /opt/IBM/WebSphere/AppServer/bin/manageprofiles.sh -create -profileName AppSrv01 -appServerNodeName d-was-01Node01 -enableService false -hostName d-was-01 -adminUserName wasadmin -adminPassword wasadmin -enableAdminSecurity true -nodeName d-was-01CellManager01 -cellName d-was-01Cell01 -profilePath /opt/IBM/WebSphere/AppServer/profiles/AppSrv01 -dmgrProfilePath /opt/IBM/WebSphere/AppServer/profiles/Dmgr01 -templatePath /opt/IBM/WebSphere/AppServer/profileTemplates/cell/default -portsFile /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/properties/portdef.props -nodePortsFile /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/properties/nodeportdef.props
+#    args:
+#      creates: /opt/IBM/WebSphere/AppServer/profiles/AppSrv01
